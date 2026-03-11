@@ -6,4 +6,3 @@ mongoose.connect(process.env.DB_URL)
 }).catch(()=>{
     console.log('not connected to database')
 })
-
