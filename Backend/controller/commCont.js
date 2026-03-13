@@ -5,43 +5,45 @@ const { compare, genToken } = require('../utils/bcryptAndJwt.js')
 
 
 module.exports.login = async (req, res, next) => {
+
     const { email, password, role } = req.body
-    let user
-    if (role === 'Admin') {
-        user = await adminModel.findOne({ email })
-        if (!user) {
-            console.log('hello')
-            res.status(401).json({
-                message: 'Something went wrong'
-            })
-        }
-    } else if (role === 'Worker') {
-        user = await workerModel.findOne({ email })
-        if (!user) {
-            res.status(401).json({
-                message: 'Something went wrong'
-            })
-        }
-    } else if (role === 'Supervisor') {
-        user = await supervisorModel.findOne({ email })
-        if (!user) {
-            res.status(401).json({
-                message: 'Something went wrong'
-            })
-        }
-    }
-    console.log('hello')
-    const isMatch = await compare(password, user.password);
-    if(!isMatch){
-        res.status(401).json({
-            message : 'Something went wrong'
+
+    let Model
+
+    if (role === "Admin") Model = adminModel
+    else if (role === "Worker") Model = workerModel
+    else if (role === "Supervisor") Model = supervisorModel
+    else {
+        return res.status(400).json({
+            message: "Invalid role"
         })
     }
 
-    const token = genToken(user);
-    res.cookie('token', token)
-    res.status(200).json({
-        message : 'Successfully logged in.',
-        data : user
+    const user = await Model.findOne({ email })
+
+    if (!user) {
+        return res.status(401).json({
+            message: "Invalid credentials"
+        })
+    }
+
+    const isMatch = await compare(password, user.password)
+
+    if (!isMatch) {
+        return res.status(401).json({
+            message: "Invalid credentials"
+        })
+    }
+
+    const token = genToken(user)
+
+    res.cookie("token", token, {
+        httpOnly: true
     })
+
+    res.status(200).json({
+        message: "Login successful",
+        data: user
+    })
+
 }
