@@ -40,7 +40,7 @@ module.exports.login = async (req, res, next) => {
     res.cookie("token", token, {
         httpOnly: true
     })
-
+    
     res.status(200).json({
         message: "Login successful",
         data: user

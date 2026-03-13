@@ -6,7 +6,7 @@ const genpass = async (password)=>{
     console.log(hashpass)
 }
 
-genpass('worker@123')
+// genpass('worker@123')
 
 const compare = async (password, hashedPass)=>{
     return await bcrypt.compare(password, hashedPass)
