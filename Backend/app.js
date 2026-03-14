@@ -14,9 +14,9 @@ const workersRoute = require('./routes/workersRoute')
 const supervisorsRoute = require('./routes/supervisorsRoutes')
 const adminsRoute = require('./routes/adminsRoute');
 
-app.use('/', commRoute);
-app.use('/worker', workersRoute);
-app.use('/supervisor', supervisorsRoute);
-app.use('/admin', adminsRoute);
+app.use('/api/', commRoute);
+app.use('./api/worker', workersRoute);
+app.use('./api/supervisor', supervisorsRoute);
+app.use('./api/admin', adminsRoute);
 
 module.exports = app;
