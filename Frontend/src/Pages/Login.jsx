@@ -1,6 +1,54 @@
-import React from "react";
+import Api from '../utils/Api'
+import { useState } from "react";
+import { useDispatch } from 'react-redux'
+import { login } from '../store/slices/authslice'
+import { useNavigate } from 'react-router-dom';
 
 function Login() {
+
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [role, setRole] = useState('')
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+
+  const data = {
+    email,
+    password,
+    role
+  }
+  const sumbitHandler = async (e) => {
+    e.preventDefault()
+
+    try {
+      console.log('heeloo')
+      const response = await Api.post('/login', data)
+      dispatch(
+        login({
+          user: response.data.user,
+          role: response.data.user.role
+        })
+      )
+
+      const userRole = response.data.user.role
+
+      if (userRole === 'admin') {
+        navigate('/admin')
+      } else if (userRole === 'worker') {
+        navigate('/worker')
+      } else if (userRole === 'supervisor') {
+        navigate('/supervisor')
+      } 
+
+
+    } catch (err) {
+      console.log(err.response?.data || err.message);
+      navigate('/')
+
+    }
+  }
+
+
   return (
     <div className="bg-gray-100 min-h-screen">
 
@@ -34,8 +82,7 @@ function Login() {
       {/* Login Form */}
       <div className="flex justify-center items-center mt-20">
 
-        <div className="bg-white p-10 rounded shadow w-[400px]">
-
+        <form onSubmit={sumbitHandler} className="bg-white p-10 rounded shadow w-[400px]">
           <h2 className="text-2xl font-semibold text-center mb-6 text-[#0b4f6c]">
             User Login
           </h2>
@@ -43,12 +90,14 @@ function Login() {
           {/* Username */}
           <div className="mb-4">
             <label className="block mb-1 font-medium">
-              Username
+              Email
             </label>
             <input
               type="text"
               className="w-full border px-3 py-2 rounded"
-              placeholder="Enter username"
+              placeholder="Enter Email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value) }}
             />
           </div>
 
@@ -61,6 +110,8 @@ function Login() {
               type="password"
               className="w-full border px-3 py-2 rounded"
               placeholder="Enter password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value) }}
             />
           </div>
 
@@ -70,10 +121,15 @@ function Login() {
               Role
             </label>
 
-            <select className="w-full border px-3 py-2 rounded">
-              <option>Worker</option>
-              <option>Supervisor</option>
-              <option>Admin</option>
+            <select
+              className="w-full border px-3 py-2 rounded"
+              value={role}
+              onChange={(e) => { setRole(e.target.value) }}
+            >
+              <option value="">Select Role</option>
+              <option value="worker">Worker</option>
+              <option value="supervisor">Supervisor</option>
+              <option value="admin">Admin</option>
             </select>
           </div>
 
@@ -82,7 +138,7 @@ function Login() {
             Login
           </button>
 
-        </div>
+        </form>
 
       </div>
 
