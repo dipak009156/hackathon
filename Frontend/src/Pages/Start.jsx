@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import Footer from "../languages/Footer";
+import Footer from "../components/Footer";
 import {Link } from 'react-router-dom'
 
 
@@ -115,7 +115,7 @@ export default function Start() {
         </div>
       </div>
 
-      {/* <Footer /> */}
+      <Footer />
     </div>
   );
 }
