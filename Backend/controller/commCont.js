@@ -9,7 +9,6 @@ const jwt = require('jsonwebtoken')
 module.exports.login = async (req, res) => {
 
     const { email, password, role } = req.body
-    console.log(role)
     let Model
 
     if (role === "admin") Model = adminModel

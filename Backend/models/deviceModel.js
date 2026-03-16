@@ -16,11 +16,6 @@ const deviceSchema = new mongoose.Schema(
       enum: ["Gas Sensor", "Water Level Sensor", "Temperature Sensor", "Camera", "GPS Tracker"],
     },
 
-    firmwareVersion: {
-      type: String,
-      default: null,
-    },
-
     status: {
       type: String,
       enum: ["Available", "InUse", "Faulty"],
