@@ -6,7 +6,7 @@ const genpass = async (password)=>{
     console.log(hashpass)
 }
 
-genpass('amay@123')  
+// genpass('amay@123')  
 
 
 const compare = async (password, hashedPass)=>{

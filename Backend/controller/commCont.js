@@ -85,3 +85,15 @@ module.exports.logout = async (req, res) => {
     res.clearCookie('token');
     res.status(200).json({ message: 'Logged out successfully' });
 }
+
+module.exports.userInfo = async (req, res) => {
+    const userId = req.user.id;
+    let Model;
+    if (req.user.role === 'worker') Model = workerModel;
+    else if (req.user.role === 'admin') Model = adminModel;
+    else if (req.user.role === 'superadmin') Model = adminModel;
+
+    const user = await Model.findById(userId).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.status(200).json(user);
+}
