@@ -3,100 +3,103 @@ const supervisorModel = require('../models/supervisorModel')
 const deviceModel = require('../models/deviceModel')
 const manholeModel = require('../models/manholeModel')
 const queryModel = require('../models/queryModel')
+const { genpass} = require('../utils/bcryptAndJwt')
 
 
 
 const getWorker = async (req, res) => {
-    const workers = await workerModel.find();
+  const workers = await workerModel.find();
 
-    res.status(200).json({
-        message: 'all workers',
-        workers
-    })
+  res.status(200).json({
+    message: 'all workers',
+    workers
+  })
 }
 
 const getSupervisor = async (req, res) => {
-    const supervisor = await supervisorModel.find();
+  const supervisor = await supervisorModel.find();
 
-    res.status(200).json({
-        message: 'all workers',
-        supervisor
-    })
+  res.status(200).json({
+    message: 'all workers',
+    supervisor
+  })
 }
 
 const getManholes = async (req, res) => {
-    const manholes = await manholeModel.find();
+  const manholes = await manholeModel.find();
 
-    res.status(200).json({
-        message: 'all workers',
-        manholes
-    })
+  res.status(200).json({
+    message: 'all workers',
+    manholes
+  })
 }
 
 const getDevices = async (req, res) => {
-    const devices = await deviceModel.find();
+  const devices = await deviceModel.find();
 
-    res.status(200).json({
-        message: 'all workers',
-        devices
-    })
+  res.status(200).json({
+    message: 'all workers',
+    devices
+  })
 }
 
 const getQuery = async (req, res) => {
-    const queries = await queryModel.find()
+  const queries = await queryModel.find()
 
-    res.status(200).json({
-        message: 'all workers',
-        queries
-    })
+  res.status(200).json({
+    message: 'all workers',
+    queries
+  })
 }
 
 const addWorker = async (req, res) => {
-    const {
-        name,
-        email,
-        password,
-        department,
-        shift,
-        joiningDate,
-        phone,
-        address,
-        healthDetails: {
-            lastCheckup,
-            medicalNotes
-        } = {},
-        emergency: {
-            contactName,
-            contactPhone
-        } = {},
-        insuranceNumber } = req.body;
+  const {
+    name,
+    email,
+    password,
+    department,
+    shift,
+    joiningDate,
+    phone,
+    address,
+    healthDetails: {
+      lastCheckup,
+      medicalNotes
+    } = {},
+    emergency: {
+      contactName,
+      contactPhone
+    } = {},
+    insuranceNumber } = req.body;
 
-    try {
-        const worker = await workerModel.create({
-            name,
-            email,
-            password,
-            department,
-            shift,
-            joiningDate,
-            phone,
-            address,
-            healthDetails: {
-                lastCheckup,
-                medicalNotes
-            },
-            emergency: {
-                contactName,
-                contactPhone
-            },
-            insuranceNumber
-        });
+  const hashedPassword = await genpass(password)
 
-        res.status(201).json({ success: true, data: worker });
+  try {
+    const worker = await workerModel.create({
+      name,
+      email,
+      password : hashedPassword,
+      department,
+      shift,
+      joiningDate,
+      phone,
+      address,
+      healthDetails: {
+        lastCheckup,
+        medicalNotes
+      },
+      emergency: {
+        contactName,
+        contactPhone
+      },
+      insuranceNumber
+    });
 
-    } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
-    }
+    res.status(201).json({ success: true, data: worker });
+
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
 
 
 
@@ -194,13 +197,13 @@ const addManhole = async (req, res) => {
 };
 
 module.exports = {
-    getWorker,
-    getSupervisor,
-    getDevices,
-    getManholes,
-    getQuery,
-    addWorker,
-    addSupervisor,
-    addDevice,
-    addManhole
+  getWorker,
+  getSupervisor,
+  getDevices,
+  getManholes,
+  getQuery,
+  addWorker,
+  addSupervisor,
+  addDevice,
+  addManhole
 }

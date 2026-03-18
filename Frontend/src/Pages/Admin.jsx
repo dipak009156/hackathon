@@ -110,46 +110,61 @@ function LoadingSpinner() {
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
+// Fetches all 4 lists using your actual routes, then derives the stat counts
+// from the response arrays — no separate /dashboard/stats endpoint needed.
 
 function Dashboard() {
-  const [stats, setStats]         = useState(null);
   const [supervisors, setSupervisors] = useState([]);
-  const [alerts, setAlerts]       = useState([]);
-  const [loading, setLoading]     = useState(true);
+  const [workers,     setWorkers]     = useState([]);
+  const [manholes,    setManholes]    = useState([]);
+  const [devices,     setDevices]     = useState([]);
+  const [loading,     setLoading]     = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchAll = async () => {
       try {
-        // TODO: confirm these endpoints
-        const [statsRes, supRes, alertRes] = await Promise.all([
-          Api.get("/admin/dashboard/stats"),        // { totalSupervisors, totalWorkers, totalManholes, activeDevices, dangerAlerts }
-          Api.get("/admin/supervisors?limit=3"),     // returns array of supervisors
-          Api.get("/admin/manholes?status=Danger,Caution&limit=5"), // returns array of manholes
+        // Using your exact route paths:
+        //   GET /admin/view-supervisors
+        //   GET /admin/view-workers
+        //   GET /admin/view-manholes
+        //   GET /admin/view-devices
+        const [supRes, worRes, manRes, devRes] = await Promise.all([
+          Api.get("/admin/view-supervisors"),
+          Api.get("/admin/view-workers"),
+          Api.get("/admin/view-manholes"),
+          Api.get("/admin/view-devices"),
         ]);
-        setStats(statsRes.data);
-        setSupervisors(supRes.data);
-        setAlerts(alertRes.data);
+        // Backend returns { supervisor:[..] }, { workers:[..] }, { manholes:[..] }, { devices:[..] }
+        setSupervisors(supRes.data?.supervisor ?? supRes.data?.supervisors ?? []);
+        setWorkers(worRes.data?.workers ?? []);
+        setManholes(manRes.data?.manholes ?? []);
+        setDevices(devRes.data?.devices ?? []);
       } catch (err) {
         console.error("Dashboard fetch failed", err);
       } finally {
         setLoading(false);
       }
     };
-    fetch();
+    fetchAll();
   }, []);
+
 
   if (loading) return <LoadingSpinner />;
 
   const cards = [
-    { label: "Total Supervisors", value: stats?.totalSupervisors ?? "—", icon: "👷", accent: "border-t-4 border-[#0b4f6c]" },
-    { label: "Total Workers",     value: stats?.totalWorkers     ?? "—", icon: "🧹", accent: "border-t-4 border-blue-400"  },
-    { label: "Total Manholes",    value: stats?.totalManholes    ?? "—", icon: "🕳", accent: "border-t-4 border-yellow-400" },
-    { label: "Active Devices",    value: stats?.activeDevices    ?? "—", icon: "📡", accent: "border-t-4 border-green-500"  },
-    { label: "Danger Alerts",     value: stats?.dangerAlerts     ?? "—", icon: "⚠️", accent: "border-t-4 border-red-500"    },
+    { label: "Total Supervisors", value: supervisors.length, icon: "👷", accent: "border-t-4 border-[#0b4f6c]" },
+    { label: "Total Workers",     value: workers.length,     icon: "🧹", accent: "border-t-4 border-blue-400"  },
+    { label: "Total Manholes",    value: manholes.length,    icon: "🕳", accent: "border-t-4 border-yellow-400" },
+    { label: "Total Devices",     value: devices.length,     icon: "📡", accent: "border-t-4 border-green-500"  },
+    { label: "Total Queries",     value: "—",                icon: "📋", accent: "border-t-4 border-purple-400" },
   ];
+
+  // Show only the 3 most recently added supervisors (last 3 in array)
+  const recentSupervisors = [...supervisors].slice(-3).reverse();
 
   return (
     <div className="space-y-6">
+      {/* Stat Cards */}
       <div className="grid grid-cols-5 gap-4">
         {cards.map(c => (
           <div key={c.label} className={"bg-white rounded-lg shadow-sm p-5 " + c.accent}>
@@ -159,38 +174,43 @@ function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* Two table panels */}
       <div className="grid grid-cols-2 gap-6">
+        {/* Recent Supervisors */}
         <SectionCard title="Recent Supervisors" icon="👷">
           <table className="w-full text-sm">
-            <thead><tr className="text-gray-500 text-xs border-b">{["Name","Zone","Status"].map(h=><th key={h} className="text-left pb-2">{h}</th>)}</tr></thead>
+            <thead>
+              <tr className="text-gray-500 text-xs border-b">
+                {["Name", "Zone", "Status"].map(h => <th key={h} className="text-left pb-2">{h}</th>)}
+              </tr>
+            </thead>
             <tbody>
-              {supervisors.map(s => (
+              {recentSupervisors.map(s => (
                 <tr key={s._id} className="border-b last:border-0">
-                  {/* TODO: confirm field names — s.fullName, s.assignedZone, s.status */}
                   <td className="py-2 font-medium">{s.fullName}</td>
                   <td className="py-2 text-gray-500">{s.assignedZone}</td>
-                  <td className="py-2"><span className={"text-xs px-2 py-0.5 rounded-full font-medium " + (statusColor[s.status] || "")}>{s.status || "Active"}</span></td>
+                  <td className="py-2">
+                    <span className={"text-xs px-2 py-0.5 rounded-full font-medium " + (statusColor[s.status] || "bg-green-100 text-green-700")}>
+                      {s.status || "Active"}
+                    </span>
+                  </td>
                 </tr>
               ))}
-              {supervisors.length === 0 && <tr><td colSpan={3} className="text-center text-gray-400 py-4 text-sm">No supervisors yet.</td></tr>}
+              {recentSupervisors.length === 0 && (
+                <tr><td colSpan={3} className="text-center text-gray-400 py-4 text-sm">No supervisors yet.</td></tr>
+              )}
             </tbody>
           </table>
         </SectionCard>
-        <SectionCard title="Manhole Alerts" icon="⚠️">
-          <table className="w-full text-sm">
-            <thead><tr className="text-gray-500 text-xs border-b">{["ID","Location","Status"].map(h=><th key={h} className="text-left pb-2">{h}</th>)}</tr></thead>
-            <tbody>
-              {alerts.map(m => (
-                <tr key={m._id} className="border-b last:border-0">
-                  {/* TODO: confirm field names — m.manholeId, m.landmark, m.status */}
-                  <td className="py-2 font-mono text-xs text-[#0b4f6c] font-semibold">{m.manholeId}</td>
-                  <td className="py-2 text-gray-500">{m.landmark}</td>
-                  <td className="py-2"><span className={"text-xs px-2 py-0.5 rounded-full font-medium " + (statusColor[m.status] || "")}>{m.status}</span></td>
-                </tr>
-              ))}
-              {alerts.length === 0 && <tr><td colSpan={3} className="text-center text-gray-400 py-4 text-sm">No alerts.</td></tr>}
-            </tbody>
-          </table>
+
+        {/* Queries — coming soon */}
+        <SectionCard title="Queries" icon="📋">
+          <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
+            <span className="text-4xl">📋</span>
+            <p className="text-sm font-medium text-gray-500">Queries coming soon</p>
+            <p className="text-xs text-gray-400">This section will display user queries once the feature is added.</p>
+          </div>
         </SectionCard>
       </div>
     </div>
@@ -200,7 +220,6 @@ function Dashboard() {
 // ─── Add Supervisor ───────────────────────────────────────────────────────────
 
 function AddSupervisor({ showToast }) {
-  // Removed: empId (not in schema)
   const init = { fullName:"", aadhaarNumber:"", phoneNumber:"", email:"", assignedZone:"", category:"", residentialAddress:"", password:"" };
   const [form, setForm]     = useState(init);
   const [loading, setLoading] = useState(false);
@@ -216,8 +235,8 @@ function AddSupervisor({ showToast }) {
     setError(null);
     setLoading(true);
     try {
-      // TODO: confirm POST endpoint and field names match your supervisor schema
-      await Api.post("/admin/supervisors", form);
+      // POST /admin/add-supervisor
+      await Api.post("/admin/add-supervisor", form);
       showToast("Supervisor added successfully!");
       setForm(init);
     } catch (err) {
@@ -239,9 +258,9 @@ function AddSupervisor({ showToast }) {
       </FormSection>
 
       <FormSection title="Contact Details">
-        <InputField label="Phone Number" type="tel"      placeholder="10-digit mobile"    value={form.phoneNumber} onChange={set("phoneNumber")} required />
-        <InputField label="Email Address" type="email"   placeholder="name@smc.gov.in"    value={form.email}       onChange={set("email")}       required />
-        <InputField label="Password"      type="password" placeholder="Set login password" value={form.password}   onChange={set("password")}    required />
+        <InputField label="Phone Number"  type="tel"      placeholder="10-digit mobile"    value={form.phoneNumber} onChange={set("phoneNumber")} required />
+        <InputField label="Email Address" type="email"    placeholder="name@smc.gov.in"    value={form.email}       onChange={set("email")}       required />
+        <InputField label="Password"      type="password" placeholder="Set login password" value={form.password}    onChange={set("password")}    required />
       </FormSection>
 
       <FormSection title="Assignment & Address">
@@ -279,9 +298,9 @@ function ViewSupervisors() {
   useEffect(() => {
     const fetchSupervisors = async () => {
       try {
-        // TODO: confirm GET endpoint
-        const res = await Api.get("/admin/supervisors");
-        setSupervisors(res.data);
+        // GET /admin/view-supervisors
+        const res = await Api.get("/admin/view-supervisors");
+        setSupervisors(res.data?.supervisor ?? res.data?.supervisors ?? []);
       } catch (err) {
         setError("Failed to load supervisors.");
         console.error(err);
@@ -292,7 +311,6 @@ function ViewSupervisors() {
     fetchSupervisors();
   }, []);
 
-  // TODO: confirm field names for filtering — s.fullName, s.assignedZone
   const filtered = supervisors.filter(s =>
     s.fullName?.toLowerCase().includes(search.toLowerCase()) ||
     s.assignedZone?.toLowerCase().includes(search.toLowerCase())
@@ -357,9 +375,8 @@ function AddWorker({ showToast }) {
     setError(null);
     setLoading(true);
     try {
-      // TODO: confirm POST endpoint
-      // TODO: confirm how nested fields are sent — healthDetails & emergency as nested or flat
-      await Api.post("/admin/workers", {
+      // POST /admin/add-worker
+      await Api.post("/admin/add-worker", {
         name:             form.name,
         email:            form.email,
         password:         form.password,
@@ -392,7 +409,7 @@ function AddWorker({ showToast }) {
       {error && <ErrorBox message={error} />}
 
       <FormSection title="Personal Information">
-        <InputField label="Full Name" placeholder="e.g. Ganesh Jadhav"      value={form.name}     onChange={set("name")}     required />
+        <InputField label="Full Name" placeholder="e.g. Ganesh Jadhav"       value={form.name}     onChange={set("name")}     required />
         <InputField label="Email"     type="email" placeholder="worker@smc.gov.in" value={form.email} onChange={set("email")} required />
         <InputField label="Password"  type="password" placeholder="Set login password" value={form.password} onChange={set("password")} required />
       </FormSection>
@@ -404,19 +421,19 @@ function AddWorker({ showToast }) {
       </FormSection>
 
       <FormSection title="Work Details">
-        <SelectField label="Shift"        options={["Morning","Afternoon","Evening","Night"]} value={form.shift}        onChange={set("shift")}        />
-        <InputField  label="Joining Date" type="date"                                         value={form.joiningDate}  onChange={set("joiningDate")}  />
-        <InputField  label="Insurance Number" placeholder="e.g. INS-2024-001"                value={form.insuranceNumber} onChange={set("insuranceNumber")} />
+        <SelectField label="Shift"            options={["Morning","Afternoon","Evening","Night"]} value={form.shift}           onChange={set("shift")}           />
+        <InputField  label="Joining Date"     type="date"                                         value={form.joiningDate}     onChange={set("joiningDate")}     />
+        <InputField  label="Insurance Number" placeholder="e.g. INS-2024-001"                    value={form.insuranceNumber} onChange={set("insuranceNumber")} />
       </FormSection>
 
       <FormSection title="Health Details">
-        <InputField label="Last Medical Checkup" type="date"                    value={form.lastCheckup}  onChange={set("lastCheckup")}  />
+        <InputField label="Last Medical Checkup" type="date"                         value={form.lastCheckup}  onChange={set("lastCheckup")}  />
         <InputField label="Medical Notes"         placeholder="Any known conditions" value={form.medicalNotes} onChange={set("medicalNotes")} />
         <div />
       </FormSection>
 
       <FormSection title="Emergency Contact">
-        <InputField label="Contact Name"  placeholder="e.g. Priya Jadhav"       value={form.emergencyContactName}  onChange={set("emergencyContactName")}  />
+        <InputField label="Contact Name"  placeholder="e.g. Priya Jadhav"         value={form.emergencyContactName}  onChange={set("emergencyContactName")}  />
         <InputField label="Contact Phone" type="tel" placeholder="10-digit mobile" value={form.emergencyContactPhone} onChange={set("emergencyContactPhone")} />
         <div />
       </FormSection>
@@ -437,9 +454,9 @@ function ViewWorkers() {
   useEffect(() => {
     const fetchWorkers = async () => {
       try {
-        // TODO: confirm GET endpoint
-        const res = await Api.get("/admin/workers");
-        setWorkers(res.data);
+        // GET /admin/view-workers
+        const res = await Api.get("/admin/view-workers");
+        setWorkers(res.data?.workers ?? []);
       } catch (err) {
         setError("Failed to load workers.");
         console.error(err);
@@ -450,7 +467,6 @@ function ViewWorkers() {
     fetchWorkers();
   }, []);
 
-  // TODO: confirm field names — w.name, w.shift
   const filtered = workers.filter(w =>
     w.name?.toLowerCase().includes(search.toLowerCase()) ||
     w.shift?.toLowerCase().includes(search.toLowerCase())
@@ -511,8 +527,8 @@ function AddManhole({ showToast }) {
     setError(null);
     setLoading(true);
     try {
-      // TODO: confirm POST endpoint and field names match your manhole schema
-      await Api.post("/admin/manholes", {
+      // POST /admin/add-manhole
+      await Api.post("/admin/add-manhole", {
         manholeId:         form.manholeId,
         zone:              form.zone,
         manholeType:       form.manholeType,
@@ -557,7 +573,6 @@ function AddManhole({ showToast }) {
         <div />
       </FormSection>
 
-      {/* Only for Sewer / Stormwater / Combined */}
       {isWater && (
         <>
           <FormSection title="Water & Depth">
@@ -620,9 +635,9 @@ function ViewManholes() {
   useEffect(() => {
     const fetchManholes = async () => {
       try {
-        // TODO: confirm GET endpoint
-        const res = await Api.get("/admin/manholes");
-        setManholes(res.data);
+        // GET /admin/view-manholes
+        const res = await Api.get("/admin/view-manholes");
+        setManholes(res.data?.manholes ?? []);
       } catch (err) {
         setError("Failed to load manholes.");
         console.error(err);
@@ -633,7 +648,6 @@ function ViewManholes() {
     fetchManholes();
   }, []);
 
-  // TODO: confirm field names — m.landmark, m.manholeId, m.status
   const filtered = manholes.filter(m =>
     (filter === "All" || m.status === filter) &&
     (m.landmark?.toLowerCase().includes(search.toLowerCase()) || m.manholeId?.includes(search))
@@ -691,7 +705,7 @@ function ViewManholes() {
 // ─── Add Device ───────────────────────────────────────────────────────────────
 
 function AddDevice({ showToast }) {
-  const init = { deviceId:"", deviceType:"", firmwareVersion:"", linkedManholeId:"", zone:"", installationDate:"", batteryLevel:"", status:"Active" };
+  const init = { deviceId:"", deviceType:"", status:"Available" };
   const [form, setForm]       = useState(init);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
@@ -701,10 +715,11 @@ function AddDevice({ showToast }) {
     setError(null);
     setLoading(true);
     try {
-      // TODO: confirm POST endpoint and field names match your device schema
-      await Api.post("/admin/devices", {
-        ...form,
-        batteryLevel: form.batteryLevel ? Number(form.batteryLevel) : null,
+      // POST /admin/add-device
+      await Api.post("/admin/add-device", {
+        deviceId:   form.deviceId,
+        deviceType: form.deviceType,
+        status:     form.status,
       });
       showToast("Device registered successfully!");
       setForm(init);
@@ -721,45 +736,9 @@ function AddDevice({ showToast }) {
       {error && <ErrorBox message={error} />}
 
       <FormSection title="Device Information">
-        <InputField  label="Device ID"        placeholder="e.g. DEV-2024-091" value={form.deviceId}        onChange={set("deviceId")}        required />
-        <SelectField label="Device Type"      options={["Gas Sensor","Water Level Sensor","Temperature Sensor","Camera","GPS Tracker"]} value={form.deviceType} onChange={set("deviceType")} required />
-        <InputField  label="Firmware Version" placeholder="e.g. v2.3.1"       value={form.firmwareVersion} onChange={set("firmwareVersion")} />
-      </FormSection>
-
-      <FormSection title="Installation Details">
-        <InputField  label="Linked Manhole ID" placeholder="e.g. MH-003" value={form.linkedManholeId} onChange={set("linkedManholeId")} required />
-        <SelectField label="Zone"              options={["Zone A","Zone B","Zone C","Zone D","Zone E"]} value={form.zone} onChange={set("zone")} required />
-        <InputField  label="Installation Date" type="date"                value={form.installationDate} onChange={set("installationDate")} required />
-      </FormSection>
-
-      <FormSection title="Battery & Status">
-        <InputField label="Battery Level (%)" type="number" placeholder="e.g. 85" value={form.batteryLevel} onChange={set("batteryLevel")} />
-
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700">Device Status</label>
-          <div className="flex flex-col gap-2">
-            {[
-              { val:"Active",   dot:"bg-green-500", style:"bg-green-50 border-green-500 text-green-700 ring-green-400"  },
-              { val:"Inactive", dot:"bg-gray-400",  style:"bg-gray-50 border-gray-400 text-gray-600 ring-gray-300"      },
-              { val:"Faulty",   dot:"bg-red-500",   style:"bg-red-50 border-red-500 text-red-700 ring-red-400"          },
-            ].map(s=>(
-              <button key={s.val} type="button" onClick={()=>setForm(f=>({...f,status:s.val}))}
-                className={"flex items-center gap-3 px-4 py-2.5 rounded-lg border-2 text-sm font-semibold transition-all w-full "+(
-                  form.status===s.val ? s.style+" ring-2" : "bg-white border-gray-200 text-gray-500 hover:border-gray-400"
-                )}>
-                <span className={"w-3 h-3 rounded-full flex-shrink-0 "+s.dot}></span>
-                {s.val}
-                {form.status===s.val&&<span className="ml-auto text-xs">✓ Selected</span>}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-end pb-1">
-          <p className="text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded px-3 py-2 leading-relaxed">
-            ℹ️ Ensure the device is physically installed and powered on before registration. The system will attempt an automatic ping after submission.
-          </p>
-        </div>
+        <InputField  label="Device ID"   placeholder="e.g. DEV-2024-091" value={form.deviceId}   onChange={set("deviceId")}   required />
+        <SelectField label="Device Type" options={["Gas Sensor","Water Level Sensor","Temperature Sensor","Camera","GPS Tracker"]} value={form.deviceType} onChange={set("deviceType")} required />
+        <div />
       </FormSection>
 
       <FormButtons onSubmit={handleSubmit} onReset={() => setForm(init)} loading={loading} />
@@ -808,7 +787,6 @@ export default function AdminPage() {
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right text-xs opacity-70">
-            {/* TODO: replace with actual logged-in admin name from auth context */}
             <p>Admin: Suresh Kumar</p>
             <p>Last login: Today, 09:42 AM</p>
           </div>

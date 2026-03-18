@@ -2,12 +2,9 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken')
 
 const genpass = async (password)=>{
-    const hashpass = await bcrypt.hash(password, 10);
-    console.log(hashpass)
+    return await bcrypt.hash(password, 10);
+    
 }
-
-// genpass('amay@123')  
-
 
 const compare = async (password, hashedPass)=>{
     return await bcrypt.compare(password, hashedPass)
@@ -28,5 +25,6 @@ const genToken = (user)=>{
 
 module.exports = {
     compare,
-    genToken
+    genToken,
+    genpass
 }
