@@ -9,7 +9,6 @@ const jwt = require('jsonwebtoken')
 module.exports.login = async (req, res) => {
 
     const { email, password, role } = req.body
-    console.log(role)
     let Model
 
     if (role === "admin") Model = adminModel
@@ -75,4 +74,24 @@ module.exports.checkToken = async (req, res) => {
         message: "Login successful", user
     })
 
+}
+
+module.exports.logout = async (req, res) => {
+    const token = req.cookies.token
+    if (!token) return res.status(401).json({ message: 'No token provided' });
+
+    res.clearCookie('token');
+    res.status(200).json({ message: 'Logged out successfully' });
+}
+
+module.exports.userInfo = async (req, res) => {
+    const userId = req.user.id;
+    let Model;
+    if (req.user.role === 'worker') Model = workerModel;
+    else if (req.user.role === 'admin') Model = adminModel;
+    else if (req.user.role === 'superadmin') Model = adminModel;
+
+    const user = await Model.findById(userId).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.status(200).json(user);
 }

@@ -21,7 +21,6 @@ function Login() {
     e.preventDefault()
 
     try {
-      console.log('heeloo')
       const response = await Api.post('/login', data)
       dispatch(
         login({
