@@ -57,4 +57,4 @@ const supervisorSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-module.exports = mongoose.model("Supervisor", supervisorSchema);
+module.exports = mongoose.model("supervisor", supervisorSchema);

@@ -15,6 +15,12 @@ const manholeSchema = new mongoose.Schema(
       required: true,
       enum: ["Zone A", "Zone B", "Zone C", "Zone D", "Zone E"],
     },
+
+    assignedTo : {
+      type : mongoose.Schema.Types.ObjectId,
+      ref :  'supervisor',
+      default : null
+    },
  
     manholeType: {
       type: String,
@@ -50,4 +56,4 @@ const manholeSchema = new mongoose.Schema(
   { timestamps: true }
 );
  
-module.exports = mongoose.model("Manhole", manholeSchema);
+module.exports = mongoose.model("manhole", manholeSchema);

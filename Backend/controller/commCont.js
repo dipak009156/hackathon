@@ -76,7 +76,6 @@ module.exports.checkToken = async (req, res) => {
 
 }
 
-
 module.exports.logout = async (req, res) => {
     const token = req.cookies.token
     if (!token) return res.status(401).json({ message: 'No token provided' });

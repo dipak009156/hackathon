@@ -9,5 +9,6 @@ const { isAuthorized, isRole } = require('../middlewares/authMiddleware')
 router.get('/check-token', checkToken)
 router.post('/login', validate(loginSchema), login)
 router.post('/logout', isAuthorized, logout)
+router.get('/me', isAuthorized, isRole('worker'), userInfo)
 
 module.exports = router

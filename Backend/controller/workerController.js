@@ -3,17 +3,35 @@ const manholeModel = require('../models/manholeModel')
 const workerModel = require('../models/workerModel')
 
 
-const checkOperation = (req, res)=>{
-    res.send("for now no logic")
+const checkOperation = async (req, res) => {
+    try {
+        // get worker with their current operation populated
+        const worker = await workerModel.findById(req.user.id)
+            .populate({
+                path: 'currentOperation',
+                populate: [
+                    { path: 'manholeId' },
+                    { path: 'supervisorId', select: '-password' }
+                ]
+            })
+
+        if (!worker.currentOperation) {
+            return res.status(200).json(null)
+        }
+
+        res.status(200).json(worker.currentOperation)
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch operation" })
+    }
 }
 
 const addQueries = async (req, res)=>{
-    const { queryType, queryTitle, queryDesctiption} = req.body
+    const { type, title, description} = req.body
 
     const addedquery = await queryModel.create({
-        queryType,
-        queryTitle, 
-        queryDescription
+        queryType : type,
+        queryTitle : title,
+        queryDescription : description
     })
 
     res.status(201).json({

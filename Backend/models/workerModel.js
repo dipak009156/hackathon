@@ -16,6 +16,12 @@ const workerSchema = new mongoose.Schema({
         required: true
     },
 
+    currentOperation :{
+        type : mongoose.Schema.Types.ObjectId,
+        ref : 'operation',
+        default : null
+    },
+
     department: {
         type: String,
         default: "Sanitation & Drainage"
