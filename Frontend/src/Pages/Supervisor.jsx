@@ -388,6 +388,7 @@ function ActiveOperation({ goTo }) {
     <div>
       <h2 className="text-xl font-bold text-gray-800 mb-5">Active Operation</h2>
       <div className="grid grid-cols-3 gap-4">
+
         {/* Left: main info */}
         <div className="col-span-2 flex flex-col gap-4">
           <SectionCard title="Operation Info">
@@ -412,15 +413,68 @@ function ActiveOperation({ goTo }) {
             </div>
           </SectionCard>
 
+          {/* Sensor Readings */}
           <SectionCard title="Sensor Readings">
-            {[["Gas Level", "Not Available"], ["Oxygen Level", "Not Available"], ["Water Flow", "Not Available"]].map(
-              ([k, v]) => (
-                <div key={k} className="flex justify-between items-center py-2.5 border-b border-gray-100 last:border-b-0">
-                  <span className="text-sm text-gray-600">{k}</span>
-                  <span className="text-xs text-gray-400 bg-gray-50 px-2.5 py-1 rounded">{v}</span>
+            {[
+              ["Gas Level", "Not Available"],
+              ["Oxygen Level", "Not Available"],
+              ["Water Flow", "Not Available"],
+            ].map(([k, v]) => (
+              <div key={k} className="flex justify-between items-center py-2.5 border-b border-gray-100 last:border-b-0">
+                <span className="text-sm text-gray-600">{k}</span>
+                <span className="text-xs text-gray-400 bg-gray-50 px-2.5 py-1 rounded">{v}</span>
+              </div>
+            ))}
+          </SectionCard>
+
+          {/* RFID Logs */}
+          <SectionCard title="RFID Logs">
+            <div
+              className="grid gap-x-3 gap-y-2 text-xs items-center"
+              style={{ gridTemplateColumns: "1fr auto auto" }}
+            >
+              {["Worker", "Tag", "Status"].map((h) => (
+                <span key={h} className="text-gray-400 uppercase tracking-wide text-[10px] font-medium">{h}</span>
+              ))}
+              {[
+                { name: "Ravi Kumar", tag: "RF-001", label: "Entry 10:15", cls: "bg-green-100 text-green-800" },
+                { name: "Anil Pawar",  tag: "RF-004", label: "Entry 10:17", cls: "bg-green-100 text-green-800" },
+                { name: "Raj Patil",   tag: "RF-007", label: "Inside 10:19", cls: "bg-yellow-100 text-yellow-800" },
+              ].map((r) => (
+                <>
+                  <span key={r.name + "-name"} className="text-gray-800 font-medium py-1.5 border-t border-gray-50">{r.name}</span>
+                  <span key={r.name + "-tag"}  className="text-gray-400 font-mono py-1.5 border-t border-gray-50">{r.tag}</span>
+                  <span key={r.name + "-label"} className={`text-[10px] px-2.5 py-0.5 rounded-full font-medium whitespace-nowrap border-t border-gray-50 ${r.cls}`}>{r.label}</span>
+                </>
+              ))}
+            </div>
+          </SectionCard>
+
+          {/* Wearable Devices */}
+          <SectionCard title="Wearable Devices">
+            {[
+              { name: "Ravi Kumar", hr: 82, temp: 36.8, spo2: 97 },
+              { name: "Anil Pawar",  hr: 76, temp: 37.1, spo2: 95 },
+              { name: "Raj Patil",   hr: 88, temp: 36.5, spo2: 98 },
+            ].map((w, i, arr) => (
+              <div key={w.name} className={`py-2.5 ${i < arr.length - 1 ? "border-b border-gray-100" : ""}`}>
+                <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-1.5">{w.name}</p>
+                <div className="flex gap-2">
+                  {[
+                    ["Heart rate", w.hr, "bpm"],
+                    ["Body temp", w.temp, "°C"],
+                    ["SpO2", w.spo2, "%"],
+                  ].map(([label, val, unit]) => (
+                    <div key={label} className="flex-1 bg-gray-50 rounded-lg px-2.5 py-1.5">
+                      <p className="text-[10px] text-gray-400 mb-0.5">{label}</p>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {val} <span className="text-[10px] font-normal text-gray-400">{unit}</span>
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              )
-            )}
+              </div>
+            ))}
           </SectionCard>
 
           <SectionCard title="Alerts">
@@ -431,7 +485,9 @@ function ActiveOperation({ goTo }) {
         {/* Right: workers, devices, controls */}
         <div className="flex flex-col gap-4">
           <SectionCard title="Workers">
-            {["Ravi Kumar", "Anil Pawar", "Raj Patil"].map((w) => <WorkerRow key={w} name={w} />)}
+            {["Ravi Kumar", "Anil Pawar", "Raj Patil"].map((w) => (
+              <WorkerRow key={w} name={w} />
+            ))}
           </SectionCard>
 
           <SectionCard title="Devices">
@@ -447,14 +503,12 @@ function ActiveOperation({ goTo }) {
             >
               Report Incident
             </button>
-            <button className="w-full border border-gray-300 text-sm py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-gray-700">
-              Pause Operation
-            </button>
             <button className="w-full bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2.5 rounded-lg transition-colors">
               Complete Operation
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );
